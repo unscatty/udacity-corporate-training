@@ -1,6 +1,7 @@
 <!doctype html>
 
 <html lang="en">
+
 <head>
     <meta charset="utf-8">
 
@@ -12,34 +13,39 @@
     <meta http-equiv="cache-control" content="no-cache" />
 
     <!--This demo is built using Vue.js and axios-->
+    <!-- <script src="https://cdn.jsdelivr.net/npm/vue@2.7.8/dist/vue.js"></script> -->
     <script src="https://cdn.jsdelivr.net/npm/vue@2.6.12"></script>
     <script src="https://unpkg.com/axios/dist/axios.min.js"></script>
-    
+
     <!--This demo uses the Buefy framework for controls, layout, and styling-->
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.8.55/css/materialdesignicons.min.css">
-    <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css">
+    <!-- <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@mdi/font@5.8.55/css/materialdesignicons.min.css"> -->
+    <!-- <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.2.0/css/all.css"> -->
     <link rel="stylesheet" href="https://unpkg.com/buefy/dist/buefy.min.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.1.2/css/all.min.css"
+        integrity="sha512-1sCRPdkRXhBV2PBLUdRb4tMg1w2YPf37qatUFeS7zlBy7jJI8Lf4VHwWfZZfpXtYSLy85pkm9GaYVYMfw5BC1A=="
+        crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://unpkg.com/buefy/dist/buefy.min.js"></script>
 
 </head>
+
 <body>
     <div class="container">
         <section class="hero">
             <div class="hero-body">
-              <p class="title">
-                Corporate Training Catalog
-              </p>
-              <p class="subtitle">
-                Learn, build, and grow with our resources
-              </p>
+                <p class="title">
+                    Corporate Training Catalog
+                </p>
+                <p class="subtitle">
+                    Learn, build, and grow with our resources
+                </p>
             </div>
-          </section>
+        </section>
         <div id="search-app">
             <div class="columns">
                 <div class="column">
                     <div class="field">
                         <label class="label">Search for</label>
-                        <input v-model="searchTerm" placeholder="Search for" class="input">
+                        <input v-model="searchTerm" placeholder="Search for" class="input" @keyup.enter="doSearch">
                     </div>
                     <div class="field">
                         <button v-on:click="doSearch" class="button is-link">Search</button>
@@ -48,46 +54,96 @@
             </div>
             <div class="block">
                 <b-field label="Filter on rating">
-                    <b-slider :min="0" :max="1" step="0.1" v-model="rating_average" v-on:change="doSearch" >
-                        <template v-for="val in [0, 0.2, 0.4, 0.6, 0.8, 1]">
+                    <b-slider :min="0" :max="5" :step="0.25" v-model="rating_average" @change="doSearch" indicator lazy>
+                        <template v-for="val in [0, 1, 2, 3, 4, 5]">
                             <b-slider-tick :value="val" :key="val">{{ val }}</b-slider-tick>
                         </template>
                     </b-slider>
                 </b-field>
             </div>
-            <div class="block">
-                <b-checkbox v-for="facet in availableFacets"
-                    v-bind:native-value="facet.value"
-                    v-model="myfacets"
-                    @change.native="doRefresh($event)">
-                    {{facet.value}} ({{facet.count}})
-                </b-checkbox>
-            </div>
-
-            <div v-for="course in results" class="block">
-                <div class="block mb-0">
-                    <div class="is-size-4">{{course.title}}</div>
+            <div v-for="(facetValues, facetName) in availableFacets" :key="facetName" class="block">
+                <div v-if="facetValues && facetValues.some((val) => val.value.length > 0)">
+                    <div>
+                        <span class="is-size-5">
+                            {{ facetName.replace(/^\w/, (c) => c.toUpperCase()) }}
+                        </span>
+                        <b-button type="is-danger" size="is-small" icon-left="arrow-rotate-left" icon-pack="fa" rounded
+                            @click="selectedFacets[facetName] = []">
+                            Reset
+                        </b-button>
+                    </div>
+                    <template v-for="(facet, index) in facetValues">
+                        <b-checkbox v-if="facet.value.length > 0" :key="index" :native-value="facet.value"
+                            v-model="selectedFacets[facetName]">
+                            <!-- v-model="selectedFacets[facetName]" @change.native="doRefresh"> -->
+                            {{facet.value}} ({{facet.count}})
+                        </b-checkbox>
+                    </template>
                 </div>
-                <div class="block mt-0">
-                    <div class="is-size-5">{{course.summary}}</div>
-                </div>
-                <div class="columns">
-                    <div class="column is-2">
-                        Product: {{course.product}}<br/>
-                        Level: {{course.level}}<br/>
-                        Role: {{course.role}}
-                    </div>
-                    <div class="column is-2">
-                        Duration: {{course.duration}}
-                    </div>
-                    <div class="column is-2">
-                        Rating: {{course.rating_average}}<br/>
-                        Rating Count: {{course.rating_count}}
-                    </div>
-                </div>            
-                <hr/>
             </div>
-    
+            <div v-if="totalResults > 0" class="block">
+                <b-field label="Sort by">
+                    <b-select v-model="sortBy" placeholder="Select a field">
+                        <option v-for="(sortable, index) in sortables" :value="sortable.value" :key="index">
+                            {{ sortable.name }}
+                        </option>
+                    </b-select>
+                    <b-select v-model="sortDirection">
+                        <option v-for="(sortDirection, index) in sortDirectionOptions" :value="sortDirection.value"
+                            :key="index">
+                            {{ sortDirection.name }}
+                        </option>
+                    </b-select>
+                </b-field>
+            </div>
+            <div>
+                <b-loading v-model="isSearching" :can-cancel="true"></b-loading>
+                <div v-if="totalResults > 0">
+                    <div class="block is-size-3">
+                        Total Results: {{ totalResults }}
+                    </div>
+                    <div v-for="course in results" class="block">
+                        <div class="block mb-0">
+                            <div class="is-size-4">{{course.title}}</div>
+                        </div>
+                        <div class="block mt-0">
+                            <div class="is-size-6">{{course.description}}</div>
+                        </div>
+                        <div class="columns">
+                            <div class="column is-2">
+                                Product: {{course.product}}<br />
+                                Level: {{course.level}}<br />
+                                Role: {{course.role}}
+                            </div>
+                            <div class="column is-2">
+                                Duration: {{course.duration}}
+                            </div>
+                            <div class="column is-2">
+                                Rating: {{course.rating_average}}<br />
+                                Rating Count: {{course.rating_count}}
+                            </div>
+                            <div v-if="course.keyphrases && course.keyphrases.length > 0" class="column">
+                                Keyphrases:
+                                <b-taglist>
+                                    <b-tag v-for="(keyphrase, index) in course.keyphrases" :key="index" type="is-info">
+                                        {{
+                                        keyphrase }}</b-tag>
+                                </b-taglist>
+                            </div>
+                        </div>
+                        <div v-if="course.instructor_profiles" class="block">
+                            <div v-for="(profile, index) in course.instructor_profiles" :key="index">
+                                <p class="is-size-5">Your instructor: {{ profile.name }}</p>
+                                <p class="is-size-6">{{ profile.description }}</p>
+                            </div>
+                        </div>
+                        <hr />
+                    </div>
+                </div>
+                <div v-else>
+                    <div class="is-size-2">No results</div>
+                </div>
+            </div>
         </div>
     </div>
 </body>
@@ -99,23 +155,54 @@
         serviceUrl is found in the Overview
     */
     const opts = {
-        headers: {'Content-Type': 'application/json', 'api-key':'<insert key here>'}
+        headers: { 'Content-Type': 'application/json', 'api-key': 'N7dMAyoQEDbTyA125QleK6Z93gL7KpIwEKH9Eaci0jAzSeBWlKL7' }
     }
-    const serviceUrl = 'https://<insert service name here>.search.windows.net'
-    
+    const serviceUrl = 'https://corporate-training-search.search.windows.net'
+
     /* 
         This demo app uses Vue.js, a progressive framework for building user interfaces.  
         Full documentation can be found here: https://vuejs.org/v2/guide/index.html
     */
-    var searchApp =  new Vue({
+    var searchApp = new Vue({
         el: '#search-app',
-        data () {
+        data() {
             return {
                 results: null,
-                searchTerm: 'azure',
-                rating_average: 0,
-                availableFacets: [],
-                myfacets: []
+                searchTerm: '',
+                rating_average: 2.5,
+                desirableFacets: ['level', 'role', 'source', 'instructor'],
+                // desirableFacets: [],
+                sortables: [
+                    {
+                        name: 'none',
+                        value: '',
+                    },
+                    {
+                        name: 'rating',
+                        value: 'rating_average'
+                    },
+                    {
+                        name: 'duration',
+                        value: 'duration'
+                    }
+                ],
+                sortBy: '',
+                sortDirectionOptions: [
+                    {
+                        name: 'Descending',
+                        value: 'desc',
+                        selected: true
+                    },
+                    {
+                        name: 'Ascending',
+                        value: 'asc',
+                    },
+                ],
+                sortDirection: 'desc',
+                availableFacets: {},
+                selectedFacets: {},
+                isSearching: false,
+                totalResults: 0
             }
         },
         /*
@@ -127,39 +214,104 @@
             doRefresh keeps facets from previous searches so users can select more than one
         */
         methods: {
-            doSearch: function(event){
+            doSearch: function () {
+                this.isSearching = true
+
                 axios
-                    .get(`${this.baseUrl}&search=${encodeURIComponent(this.searchTerm)}&${this.filter}&facet=level`, opts)
+                    .get(`${this.baseUrl}&search=${encodeURI(this.searchTerm)}&${this.filter}${encodeURI(this.createDesirableFacets)}${encodeURI(this.createSortBy)}&$count=true`, opts)
                     .then(response => {
-                        this.results = response.data.value; 
-                        this.availableFacets = response.data['@search.facets'].level;
+                        this.isSearching = false
+
+                        this.results = response.data.value;
+                        this.totalResults = response.data['@odata.count']
+                        this.availableFacets = response.data['@search.facets'];
+                        this.selectedFacets = Object.keys(this.availableFacets).reduce((result, key) => {
+                            result[key] = [];
+                            return result;
+                        }, {})
                     })
             },
-            doRefresh: function(event){
+            doRefresh: function () {
+                this.isSearching = true
+
                 axios
-                    .get(`${this.baseUrl}&search=${encodeURIComponent(this.searchTerm)}&${this.filter}`,
+                    .get(`${this.baseUrl}&search=${encodeURI(this.searchTerm)}&${this.filter}${encodeURI(this.createSortBy)}&$count=true`,
                         opts)
                     .then(response => {
-                        this.results = response.data.value; 
+                        this.isSearching = false
+
+                        this.totalResults = response.data['@odata.count']
+                        this.results = response.data.value;
                     })
+            },
+        },
+        watch: {
+            createdSelectedFacets() {
+                this.doRefresh()
+            },
+            createSortBy() {
+                this.doRefresh()
             }
         },
-        computed:{
+        computed: {
+            createDesirableFacets() {
+                return (this.desirableFacets.map((facet) => `&facet=${facet}`) || []).join('')
+            },
             /*
                 We build the filter dynamically here.  We first filter on rating 
                 and then, if facets have been selected by the users, add those as a pipe delimited string.
             */
-            filter: function(){
-                f = `$filter=rating_average%20ge%20${this.rating_average}`;
-                if(this.myfacets && this.myfacets.length > 0){
-                    f += `and search.in(level, '${this.myfacets.join('|')}' ,'|')`;
+            createdSelectedFacets() {
+                // function processSelectedFacet(facetOptions, facetName) {
+                //     // Separate facet options into multi-word and single-word arrays
+                //     const facetTypes = facetOptions.reduce((result, option) => {
+                //         // result[option.includes(' ') ? 'multiWord' : 'singleWord'].push(option)
+                //         result['singleWord'].push(option)
+                //         return result
+                //     }, { singleWord: [], multiWord: [] })
+
+                //     // Join with 'or' because is a matching
+                //     const multiWordGroup = facetTypes.multiWord.map((facetValue) => `search.ismatch('${facetValue.split(' ').join('+')}', '${facetName}')`).join(' or ')
+                //     const multiWordFilter = multiWordGroup ? ` and (${multiWordGroup})` : ''
+
+                //     const singleWordFilter = facetTypes.singleWord.length > 0 ? ` and search.in(${facetName}, '${facetTypes.singleWord.join('|')}', '|')` : ''
+
+                //     return multiWordFilter + singleWordFilter
+                // }
+
+                return encodeURI(Object.keys(this.selectedFacets).map((facetName) => {
+                    const facetOptions = this.selectedFacets[facetName]
+
+                    if (facetOptions && facetOptions.length > 0) {
+                        return facetOptions.length > 0 ? `search.in(${facetName}, '${facetOptions.join('|')}', '|')` : ''
+                    }
+
+                    return ''
+                }).filter((e) => !!e).join(' and '))
+            },
+            createSortBy() {
+                let sortBy = ''
+
+                if (this.sortBy) {
+                    sortBy = `&$orderby=${this.sortBy} ${this.sortDirection}`
                 }
+
+                return sortBy
+            },
+            filter: function () {
+                f = encodeURI(`$filter=rating_average ge ${this.rating_average}`);
+
+                if (this.createdSelectedFacets) {
+                    f += encodeURI(' and ') + this.createdSelectedFacets
+                }
+
                 return f;
             },
-            baseUrl: function(){
-                return `${serviceUrl}/indexes/azuretable-index/docs?api-version=2020-06-30`
+            baseUrl: function () {
+                return `${serviceUrl}/indexes/courses-index/docs?api-version=2020-06-30`
             }
         }
     })
 </script>
+
 </html>
