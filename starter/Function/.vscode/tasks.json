@@ -65,5 +65,10 @@
       "isBackground": true,
       "problemMatcher": "$func-dotnet-watch"
     }
-  ]
+  ],
+  "options": {
+    "env": {
+      "DOTNET_SYSTEM_GLOBALIZATION_INVARIANT": "1"
+    }
+  }
 }

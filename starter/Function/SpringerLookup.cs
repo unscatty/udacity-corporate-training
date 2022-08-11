@@ -14,16 +14,16 @@ using Newtonsoft.Json.Linq;
 
 namespace Udacity.springerlookupdemo
 {
-    
+
     public static class SpringerLookup
     {
-        
+
         /* 
 
           This is where you will configure your Spring API Key
           
         */
-        static readonly string apikey = "<insert API credential here>";
+        static readonly string apikey = "4f07778b8eb03c044ddb172431ed0c8b";
         static readonly string springerapiendpoint = "http://api.springernature.com/openaccess/json";
 
         #region Class used to deserialize the request
@@ -74,10 +74,10 @@ namespace Udacity.springerlookupdemo
         #endregion
 
         [FunctionName("SpringerLookup")]
-        public static async Task<IActionResult> Run(
+        public static IActionResult Run(
             [HttpTrigger(AuthorizationLevel.Function, "post", Route = null)] HttpRequest req, ILogger log)
         {
-           log.LogInformation("Entity Search function: C# HTTP trigger function processed a request.");
+            log.LogInformation("Entity Search function: C# HTTP trigger function processed a request." + req.Body);
 
             var response = new WebApiResponse
             {
@@ -85,6 +85,10 @@ namespace Udacity.springerlookupdemo
             };
 
             string requestBody = new StreamReader(req.Body).ReadToEnd();
+
+            log.LogTrace(requestBody);
+
+
             var data = JsonConvert.DeserializeObject<WebApiRequest>(requestBody);
 
             // Do some schema validation
@@ -134,15 +138,16 @@ namespace Udacity.springerlookupdemo
         }
 
         #region Methods to call the Springer API
-        
-        
+
+
         private async static Task<OutputRecord.OutputRecordData> GetEntityMetadata(string title)
         {
             var uri = springerapiendpoint + "?q=title:\"" + title + "\"&api_key=" + apikey;
             var result = new OutputRecord.OutputRecordData();
 
             using (var client = new HttpClient())
-            using (var request = new HttpRequestMessage {
+            using (var request = new HttpRequestMessage
+            {
                 Method = HttpMethod.Get,
                 RequestUri = new Uri(uri)
             })
@@ -152,7 +157,8 @@ namespace Udacity.springerlookupdemo
                 JObject springerresults = JObject.Parse(responseBody);
                 IList<JToken> parsedresults = springerresults["records"].Children().ToList();
 
-                foreach(JToken t in parsedresults){
+                foreach (JToken t in parsedresults)
+                {
                     result.DOI = t.Value<string>("doi");
                     result.PublicationDate = t.Value<string>("publicationDate");
                     result.PublicationName = t.Value<string>("publicationName");
@@ -163,7 +169,7 @@ namespace Udacity.springerlookupdemo
             return result;
         }
 
-        
+
         #endregion
     }
 }
