@@ -1,0 +1,21 @@
+Users should be able to search all fields from course data for keywords
+Users should be able to see all relevant fields in search results
+Users should be able to filter based on course rating and duration
+Users should be able to filter and facet on source
+Users should be able to filter and facet on skills
+Users should be able to filter and facet on role
+Users should be able to sort by course rating
+Users should be able to sort by course duration
+Users should be able to search and filter based on enriched data for "instructor profile"
+
+Users should be able to search all fields from pdf articles for keywords
+Users should be able to search all fields from pdf articles for author
+Users should be able to search all fields from pdf articles for institution
+Users should be able to filter by keywords
+Users should be able to filter by author
+Users should be able to filter by title
+Users should be able to filter by institution
+Users should be able to search and filter based on enriched data for "publication name"
+Users should be able to search and filter based on enriched data for "DOI"
+Users should be able to search and filter based on enriched data for "publication date"
+

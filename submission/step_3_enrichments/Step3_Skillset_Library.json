@@ -1,0 +1,68 @@
+{
+  "@odata.context": "https://corporate-training-search.search.windows.net/$metadata#skillsets/$entity",
+  "@odata.etag": "\"0x8DA7A728F018FA2\"",
+  "name": "papers-skillset",
+  "description": "Skillset created from the portal. skillsetName: papers-skillset; contentField: metadata_title; enrichmentGranularity: document; knowledgeStoreStorageAccount: ;",
+  "skills": [
+    {
+      "@odata.type": "#Microsoft.Skills.Text.KeyPhraseExtractionSkill",
+      "name": "#1",
+      "description": null,
+      "context": "/document/metadata_title",
+      "defaultLanguageCode": "en",
+      "maxKeyPhraseCount": null,
+      "modelVersion": null,
+      "inputs": [
+        {
+          "name": "text",
+          "source": "/document/metadata_title"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "keyPhrases",
+          "targetName": "keyphrases"
+        }
+      ]
+    },
+    {
+      "@odata.type": "#Microsoft.Skills.Custom.WebApiSkill",
+      "name": "Springer Lookup",
+      "description": "Extract paper metadata from springer API",
+      "context": "/document",
+      "uri": "https://springerlookup-function.azurewebsites.net/api/SpringerLookup?code=F5oKctMMzNsz7eNkLRwfbuNYB4Z_r_ltUzEHW2TnytYjAzFugxpBvQ==",
+      "httpMethod": "POST",
+      "timeout": "PT30S",
+      "batchSize": 10,
+      "degreeOfParallelism": 1,
+      "inputs": [
+        {
+          "name": "ArticleName",
+          "source": "/document/metadata_title"
+        }
+      ],
+      "outputs": [
+        {
+          "name": "publicationName",
+          "targetName": "publicationName"
+        },
+        {
+          "name": "publisher",
+          "targetName": "publisher"
+        },
+        {
+          "name": "doi",
+          "targetName": "doi"
+        },
+        {
+          "name": "publicationDate",
+          "targetName": "publicationDate"
+        }
+      ],
+      "httpHeaders": {}
+    }
+  ],
+  "cognitiveServices": null,
+  "knowledgeStore": null,
+  "encryptionKey": null
+}
