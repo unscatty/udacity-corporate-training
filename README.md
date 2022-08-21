@@ -6,6 +6,9 @@ The final result website can be accessed at https://corporatetraindata.z13.web.c
 #### Website demo
 ![](submission/step_4_deployment/website_demo.gif)
 
+#### Submission
+Submission files can be found [here](submission/README.md)
+
 #### Problem Definition
 The company provides training opportunities for technical staff using a combination of internal and external sources. The company is a Microsoft Gold Certified Partner and also engages with Udacity to provide external training. In addition, the company maintains a library of select open-access journal articles relevant to their work and also provides their own internal Moodle site for training.
 
